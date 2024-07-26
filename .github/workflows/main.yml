@@ -1,0 +1,29 @@
+name: OpenVPN
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up OpenVPN server
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y openvpn easy-rsa
+        make-cadir ~/openvpn-ca
+        cd ~/openvpn-ca
+        cp -r /usr/share/easy-rsa/* ./
+        ./easyrsa init-pki
+        ./easyrsa build-ca nopass
+        ./easyrsa gen-dh
+        ./easyrsa build-server-full server nopass
+        ./easyrsa build-client-full client nopass
+        openvpn --genkey --secret ta.key
+        mkdir -p /etc/openvpn
+        cp pki/ca.crt pki/private/ca.key pki/issued/server.crt pki/private/server.key pki/dh.pem ta.key /etc/openvpn
+
+        cat
